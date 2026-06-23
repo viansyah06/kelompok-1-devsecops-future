@@ -12,8 +12,8 @@
 |:--------|:-----------------|
 | Muhammad Rifqi Oktaviansyah | Paper reading (SBOM & Vendor Affinity), Gap Analysis, State-of-the-Art |
 | Muhammad Arsy Athallah | Design Decisions, Implementasi pipeline (GitHub Actions, Dockerfile) |
-| Angella Christie | Evaluasi & Analisis, Refleksi, README |
-| Hafiz Akmaldi Santosa | Presentasi slides, koordinasi review |
+| Hafiz Akmaldi Santosa | Evaluasi & Analisis, Refleksi, README |
+| Angella Christie | Presentasi slides, koordinasi review |
 
 ---
 
