@@ -37,8 +37,6 @@ Proyek ini mengimplementasikan pipeline DevSecOps yang menyelesaikan dua celah k
 │   ├── metrics-before.md               ← Baseline sebelum implementasi
 │   ├── metrics-after.md                ← Hasil eksekusi pipeline
 │   └── analysis.md                     ← Analisis efektivitas
-├── presentation/
-│   └── slides.pdf                      ← Slide presentasi
 └── docs/
     └── refleksi-kelompok.md            ← Refleksi tim
 ```
@@ -86,22 +84,15 @@ Proyek ini mengimplementasikan pipeline DevSecOps yang menyelesaikan dua celah k
 
 ### Langkah Setup
 
-**1. Fork atau clone repository ini ke akun GitHub kamu**
-
-```bash
-git clone https://github.com/<org>/kelompok-1-devsecops-future.git
-cd kelompok-1-devsecops-future
-```
-
-**2. Aktifkan GitHub Actions**
+**1. Aktifkan GitHub Actions**
 
 Masuk ke Settings → Actions → General → pilih "Allow all actions and reusable workflows".
 
-**3. Aktifkan izin write untuk GITHUB_TOKEN**
+**2. Aktifkan izin write untuk GITHUB_TOKEN**
 
 Settings → Actions → General → Workflow permissions → pilih "Read and write permissions".
 
-**4. Trigger pipeline**
+**3. Trigger pipeline**
 
 Push ke branch `main`:
 
@@ -111,7 +102,7 @@ git commit -m "trigger: jalankan pipeline DevSecOps"
 git push origin main
 ```
 
-**5. Pantau eksekusi**
+**4. Pantau eksekusi**
 
 Buka tab **Actions** di GitHub repository → pilih run terbaru → pantau setiap job.
 
