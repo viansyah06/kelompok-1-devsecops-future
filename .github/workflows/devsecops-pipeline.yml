@@ -1,0 +1,286 @@
+name: Supply Chain Security Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/supply-chain-demo
+
+# Izin minimum untuk keyless signing via Sigstore
+permissions:
+  contents: read
+  packages: write
+  id-token: write  # Diperlukan untuk OIDC token (Cosign keyless signing)
+
+jobs:
+  # ============================================================
+  # JOB 1: Build & Push Container Image ke GitHub Container Registry
+  # ============================================================
+  build:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-ref: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=long
+            type=ref,event=branch
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: implementation/
+          file: implementation/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================================
+  # JOB 2A: SBOM Generation — Jalur Anchore (Syft)
+  # ============================================================
+  sbom-anchore:
+    name: Generate SBOM (Syft/Anchore)
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
+            | sh -s -- -b /usr/local/bin
+
+      - name: Generate SBOM with Syft (CycloneDX format)
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.image-digest }}"
+          syft "$IMAGE" \
+            --output cyclonedx-json=sbom-syft.cyclonedx.json \
+            --scope all-layers
+
+      - name: Upload Syft SBOM as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-syft
+          path: sbom-syft.cyclonedx.json
+          retention-days: 30
+
+  # ============================================================
+  # JOB 2B: SBOM Generation — Jalur Aqua Security (Trivy)
+  # ============================================================
+  sbom-aqua:
+    name: Generate SBOM (Trivy/Aqua)
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Trivy
+        run: |
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key \
+            | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" \
+            | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update -qq && sudo apt-get install -y trivy
+
+      - name: Generate SBOM with Trivy (CycloneDX format)
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.image-digest }}"
+          trivy image \
+            --format cyclonedx \
+            --output sbom-trivy.cyclonedx.json \
+            "$IMAGE"
+
+      - name: Upload Trivy SBOM as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-trivy
+          path: sbom-trivy.cyclonedx.json
+          retention-days: 30
+
+  # ============================================================
+  # JOB 3A: CVE Scanning — Jalur Anchore (Grype)
+  # ============================================================
+  scan-anchore:
+    name: Scan CVE (Grype/Anchore)
+    runs-on: ubuntu-latest
+    needs: sbom-anchore
+
+    steps:
+      - name: Download Syft SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom-syft
+
+      - name: Install Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh \
+            | sh -s -- -b /usr/local/bin
+
+      - name: Scan SBOM with Grype
+        run: |
+          grype sbom:sbom-syft.cyclonedx.json \
+            --output json \
+            --file report-grype.json \
+            --fail-on critical
+        continue-on-error: true  # Lanjutkan agar report tetap ter-upload
+
+      - name: Upload Grype report
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-grype
+          path: report-grype.json
+          retention-days: 30
+
+      - name: Print CVE summary (Grype)
+        run: |
+          echo "=== Grype CVE Summary ==="
+          grype sbom:sbom-syft.cyclonedx.json --output table || true
+
+  # ============================================================
+  # JOB 3B: CVE Scanning — Jalur Aqua Security (Trivy)
+  # ============================================================
+  scan-aqua:
+    name: Scan CVE (Trivy/Aqua)
+    runs-on: ubuntu-latest
+    needs: sbom-aqua
+
+    steps:
+      - name: Download Trivy SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom-trivy
+
+      - name: Install Trivy
+        run: |
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key \
+            | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" \
+            | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update -qq && sudo apt-get install -y trivy
+
+      - name: Scan SBOM with Trivy
+        run: |
+          trivy sbom \
+            --format json \
+            --output report-trivy.json \
+            --exit-code 1 \
+            --severity CRITICAL,HIGH \
+            sbom-trivy.cyclonedx.json
+        continue-on-error: true  # Lanjutkan agar report tetap ter-upload
+
+      - name: Upload Trivy scan report
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-trivy
+          path: report-trivy.json
+          retention-days: 30
+
+      - name: Print CVE summary (Trivy)
+        run: |
+          echo "=== Trivy CVE Summary ==="
+          trivy sbom --format table sbom-trivy.cyclonedx.json || true
+
+  # ============================================================
+  # JOB 4: Keyless Signing & Transparency Logging via Sigstore
+  # ============================================================
+  sign-and-verify:
+    name: Sign Image (Cosign Keyless) & Log to Rekor
+    runs-on: ubuntu-latest
+    needs: [scan-anchore, scan-aqua]
+
+    steps:
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.2.3'
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Penandatanganan keyless: menggunakan OIDC token dari GitHub Actions
+      # Private key dibuat secara ephemeral (±10 menit) oleh Fulcio CA,
+      # kemudian dimusnahkan. Tidak ada key yang disimpan di Secrets.
+      - name: Sign container image (Keyless via OIDC)
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.image-digest }}"
+          cosign sign --yes "$IMAGE"
+
+      # Entry penandatanganan otomatis dicatat ke Rekor (transparency log publik)
+      - name: Verify signature & print Rekor log entry
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.image-digest }}"
+          echo "=== Verifying Cosign Signature ==="
+          cosign verify \
+            --certificate-identity-regexp "https://github.com/${{ github.repository }}/*" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "$IMAGE" | jq .
+
+      - name: Attach SBOM to image (Cosign attestation)
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          # Download both SBOMs
+          echo "Attestation step: attaching Syft SBOM to image"
+
+      - name: Download SBOMs for attestation
+        uses: actions/download-artifact@v4
+        with:
+          pattern: sbom-*
+          merge-multiple: true
+
+      - name: Attest SBOM (Syft) to image
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.image-digest }}"
+          cosign attest --yes \
+            --predicate sbom-syft.cyclonedx.json \
+            --type cyclonedx \
+            "$IMAGE"
