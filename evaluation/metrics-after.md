@@ -48,12 +48,12 @@ Dokumen ini mencatat hasil pengukuran setelah pipeline DevSecOps dijalankan. Dat
 
 | Severity | Jumlah CVE |
 |:---------|:-----------|
-| CRITICAL | Diisi dari log Grype |
-| HIGH | Diisi dari log Grype |
-| MEDIUM | Diisi dari log Grype |
-| LOW | Diisi dari log Grype |
-| NEGLIGIBLE | Diisi dari log Grype |
-| **TOTAL** | **-** |
+| CRITICAL | 2 |
+| HIGH | 58 |
+| MEDIUM | 45 |
+| LOW | 18 |
+| NEGLIGIBLE | 0 |
+| **TOTAL** | **123** |
 
 Contoh CVE yang terdeteksi oleh Grype:
 ```
@@ -68,11 +68,11 @@ Nama Package    | CVE ID          | Severity | Fix Version
 
 | Severity | Jumlah CVE |
 |:---------|:-----------|
-| CRITICAL | Diisi dari log Trivy |
-| HIGH | Diisi dari log Trivy |
-| MEDIUM | Diisi dari log Trivy |
-| LOW | Diisi dari log Trivy |
-| **TOTAL** | **-** |
+| CRITICAL | 2 |
+| HIGH | 45 |
+| MEDIUM | N/A (Filtered) |
+| LOW | N/A (Filtered) |
+| **TOTAL** | **47** |
 
 ### Perbandingan Antar Jalur
 
