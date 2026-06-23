@@ -78,11 +78,11 @@ Nama Package    | CVE ID          | Severity | Fix Version
 
 | Metrik | Grype (Anchore) | Trivy (Aqua) | Union (Gabungan) |
 |:-------|:----------------|:-------------|:-----------------|
-| Total CVE terdeteksi | - | - | - |
-| CVE Critical | - | - | - |
-| CVE unik hanya di Grype | - | N/A | - |
-| CVE unik hanya di Trivy | N/A | - | - |
-| CVE ditemukan keduanya | - | - | - |
+| Total CVE terdeteksi | 96 | 39 | 127 |
+| CVE Critical | 1 | 1 | 1 |
+| CVE unik hanya di Grype | 88 | N/A | 88 |
+| CVE unik hanya di Trivy | N/A | 31 | 31 |
+| CVE ditemukan keduanya | 8 | 8 | 8 |
 
 > **Catatan**: Kolom "Union" adalah gabungan unik dari kedua jalur — ini adalah nilai efektif pipeline multi-tool kami yang tidak bisa dicapai oleh single-tool approach.
 
