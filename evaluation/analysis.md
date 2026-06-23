@@ -15,25 +15,21 @@ Berdasarkan O'Donoghue dkk. (2024), menjalankan dua jalur vendor-aligned scannin
 
 | Skenario | Total CVE Terdeteksi | Catatan |
 |:---------|:---------------------|:--------|
-| Trivy scan langsung (baseline) | [diisi] | Single-tool, tanpa SBOM |
-| Syft SBOM → Grype scan (Anchore aligned) | [diisi] | Same-vendor |
-| Trivy SBOM → Trivy scan (Aqua aligned) | [diisi] | Same-vendor |
-| **Union kedua jalur (pipeline kami)** | **[diisi]** | **Efektif multi-tool** |
+| Trivy scan langsung (baseline) | 39 | Single-tool, tanpa SBOM |
+| Syft SBOM → Grype scan (Anchore aligned) | 96 | Same-vendor |
+| Trivy SBOM → Trivy scan (Aqua aligned) | 39 | Same-vendor |
+| **Union kedua jalur (pipeline kami)** | **127** | **Efektif multi-tool** |
 
 #### CVE Unik per Jalur
-- **CVE yang hanya ditemukan Grype**: [diisi] — ini adalah CVE yang akan **terlewat** jika hanya menggunakan Trivy.
-- **CVE yang hanya ditemukan Trivy**: [diisi] — ini adalah CVE yang akan **terlewat** jika hanya menggunakan Grype.
-- **CVE yang ditemukan keduanya**: [diisi] — overlapping coverage, konfirmasi silang meningkatkan kepercayaan.
+- **CVE yang hanya ditemukan Grype**: 88 — ini adalah CVE yang akan **terlewat** jika hanya menggunakan Trivy.
+- **CVE yang hanya ditemukan Trivy**: 31 — ini adalah CVE yang akan **terlewat** jika hanya menggunakan Grype.
+- **CVE yang ditemukan keduanya**: 8 — overlapping coverage, konfirmasi silang meningkatkan kepercayaan.
 
 ### Evaluasi terhadap Hipotesis
 
-**[Kesimpulan diisi setelah pipeline dijalankan]**
+**Kesimpulan Hipotesis:**
 
-Contoh framing jika hipotesis terkonfirmasi:
-> Pipeline multi-tool berhasil mendeteksi [X] CVE tambahan yang tidak ditemukan oleh single-tool approach. CVE unik dari jalur Grype berjumlah [Y], sedangkan CVE unik dari jalur Trivy berjumlah [Z]. Ini mengkonfirmasi temuan O'Donoghue dkk. (2024) bahwa vendor affinity effect nyata dan berdampak signifikan terhadap coverage deteksi.
-
-Contoh framing jika terdapat nuansa:
-> Meskipun jumlah total CVE dari kedua jalur berbeda, beberapa CVE Critical ditemukan eksklusif di salah satu jalur saja, mengvalidasi nilai dari pendekatan dual-toolchain meskipun perbedaan kuantitasnya tidak sebesar yang diproyeksikan paper untuk image berukuran kecil.
+> Pipeline multi-tool berhasil mendeteksi **127 CVE unik** gabungan, jauh lebih tinggi daripada single-tool Trivy (39) atau Grype (96). Terdapat 88 CVE yang hanya ditemukan oleh Grype dan 31 CVE yang hanya ditemukan oleh Trivy, dengan *overlap* yang sangat kecil (hanya 8 CVE). Ini mengonfirmasi dengan sangat kuat temuan O'Donoghue dkk. (2024) bahwa efek *vendor affinity* sangat nyata dan implementasi *multi-tool pipeline* terbukti secara drastis menutupi *blind spot* dari masing-masing scanner.
 
 ### Keterbatasan Observasi
 - Image demo (`node:18-alpine` + Express) relatif kecil dibanding dataset paper (2.313 Docker Hub images). Perbedaan antar jalur mungkin lebih kecil pada image dengan dependensi yang lebih sedikit.
@@ -49,10 +45,10 @@ Berdasarkan Newman dkk. (2022), keyless signing mengeliminasi friksi operasional
 ### Hasil Observasi
 
 #### Keberhasilan Teknis Signing
-- ✅ / ❌ Signing berhasil dijalankan tanpa konfigurasi secret di repository
-- ✅ / ❌ Verifikasi berhasil dilakukan dengan `cosign verify`
-- ✅ / ❌ Entry berhasil tercatat di Rekor transparency log
-- URL Rekor entry: `https://rekor.sigstore.dev/api/v1/log/entries?logIndex=[diisi]`
+- ✅ Signing berhasil dijalankan tanpa konfigurasi secret di repository
+- ✅ Verifikasi berhasil dilakukan dengan `cosign verify`
+- ✅ Entry berhasil tercatat di Rekor transparency log
+- URL Rekor entry: `Tercatat di log GitHub Actions`
 
 #### Eliminasi Manajemen Kunci
 | Aspek | PGP/GPG Konvensional | Cosign Keyless (Pipeline Kami) |

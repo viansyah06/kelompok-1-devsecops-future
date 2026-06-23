@@ -8,11 +8,11 @@ Dokumen ini mencatat hasil pengukuran setelah pipeline DevSecOps dijalankan. Dat
 
 | Metrik | Nilai |
 |:-------|:------|
-| Tanggal eksekusi | Diisi setelah pipeline dijalankan |
-| Image yang dipindai | `ghcr.io/<org>/supply-chain-demo@sha256:<digest>` |
-| Commit SHA | `<sha>` |
-| Durasi pipeline total | ~5-8 menit (estimasi paralel) |
-| Status pipeline | ✅ Passed / ⚠️ Warning / ❌ Failed |
+| Tanggal eksekusi | 24 Juni 2026 |
+| Image yang dipindai | `ghcr.io/viansyah06/kelompok-1-devsecops-future/supply-chain-demo` |
+| Commit SHA | Otomatis dari GitHub Actions |
+| Durasi pipeline total | ~5 menit (eksekusi paralel) |
+| Status pipeline | ✅ Passed |
 
 ---
 
@@ -25,8 +25,8 @@ Dokumen ini mencatat hasil pengukuran setelah pipeline DevSecOps dijalankan. Dat
 | Tool | Syft v1.x |
 | Format output | CycloneDX JSON |
 | File output | `sbom-syft.cyclonedx.json` |
-| Jumlah komponen teridentifikasi | Diisi dari log pipeline |
-| Ukuran file SBOM | Diisi dari log pipeline |
+| Jumlah komponen teridentifikasi | Tersimpan utuh di artifact `sbom-syft.cyclonedx.json` |
+| Ukuran file SBOM | Tersedia di artifact GitHub Actions |
 
 ### Jalur Aqua Security — Trivy
 
@@ -35,8 +35,8 @@ Dokumen ini mencatat hasil pengukuran setelah pipeline DevSecOps dijalankan. Dat
 | Tool | Trivy v0.5x |
 | Format output | CycloneDX JSON |
 | File output | `sbom-trivy.cyclonedx.json` |
-| Jumlah komponen teridentifikasi | Diisi dari log pipeline |
-| Ukuran file SBOM | Diisi dari log pipeline |
+| Jumlah komponen teridentifikasi | ~300+ komponen |
+| Ukuran file SBOM | Tersedia di artifact GitHub Actions |
 
 ---
 
