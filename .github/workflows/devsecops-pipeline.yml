@@ -225,7 +225,7 @@ jobs:
   sign-and-verify:
     name: Sign Image (Cosign Keyless) & Log to Rekor
     runs-on: ubuntu-latest
-    needs: [scan-anchore, scan-aqua]
+    needs: [build, scan-anchore, scan-aqua]
 
     steps:
       - name: Install Cosign
