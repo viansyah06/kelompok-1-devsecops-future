@@ -8,6 +8,7 @@
 | Muhammad Arsy Athallah | 5027221048 |
 | Muhammad Rifqi Oktaviansyah | 5027221067 |
 | Angella Christie | 5027221047 |
+| Salomo | 5027221063 |
 
 Proyek ini mengimplementasikan pipeline DevSecOps yang menyelesaikan dua celah kritis dalam keamanan *software supply chain*:
 1. **Blind spot CVE** akibat *vendor affinity* pada toolchain SBOM → diselesaikan dengan multi-tool vendor-aligned scanning paralel.
